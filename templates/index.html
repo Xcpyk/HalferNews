@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>半闻驿 - HalferNews</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+    <style>
+        @font-face {
+            font-family: 'AlibabaPuHuiTi-Regular';
+            src: url('/static/AlibabaPuHuiTi-2-55-Regular.ttf') format('truetype');
+            font-style: normal;
+            unicode-range: U+0000-FFFF;
+        }
+        @font-face {
+            font-family: 'AlibabaPuHuiTi-Bold';
+            src: url('/static/AlibabaPuHuiTi-2-85-Bold.ttf') format('truetype');
+            font-style: normal;
+            unicode-range: U+0000-FFFF;
+        }
+        @font-face {
+            font-family: 'AlibabaPuHuiTi-Light';
+            src: url('/static/AlibabaPuHuiTi-2-45-Light.ttf') format('truetype');
+            font-style: normal;
+            unicode-range: U+0000-FFFF;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'AlibabaPuHuiTi-Regular', sans-serif;
+            color: #222;
+            font-size: 0.97rem;
+        }
+        .container {
+            max-width: 900px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 1.2rem;
+            box-shadow: 0 6px 32px 0 rgba(60,72,88,0.10);
+            padding: 2rem 1.2rem 1.2rem 1.2rem;
+            margin-top: 0.5rem;
+            margin-bottom: 2.2rem;
+        }
+        header {
+            margin-bottom: 2rem;
+        }
+        .news-item {
+            transition: box-shadow 0.33s cubic-bezier(.4,0,.2,1), border-color 0.33s, background 0.33s, transform 0.33s cubic-bezier(.4,0,.2,1), filter 0.33s;
+            border-left: 3px solid transparent;
+            padding: 0.7rem 1rem 0.5rem 1rem;
+            margin-bottom: 0.6rem;
+            background: #fff;
+            border-radius: 0.7rem;
+            box-shadow: 0 2px 8px rgba(60,72,88,0.07);
+            border: 1px solid #e3e8f0;
+        }
+        .news-item:hover {
+            background: linear-gradient(90deg, #f6faff 80%, #eaf4ff 100%);
+            border-left: 3px solid #4b9fff;
+            box-shadow: 0 10px 32px 0 rgba(13,110,253,0.13), 0 2px 8px rgba(60,72,88,0.07);
+            border-color: #b6d0ff;
+            filter: brightness(1.018);
+            transform: translateY(-2.5px) scale(1.012);
+        }
+        .original-title {
+            font-size: 0.76rem;
+            color: #8a99b3;
+            margin-bottom: 0;
+            font-family: 'AlibabaPuHuiTi-Regular', monospace;
+            letter-spacing: 0.01em;
+        }
+        .score-badge {
+            min-width: 38px;
+            font-size: 0.73rem;
+            background: linear-gradient(90deg, #e9ecef 60%, #e3f0ff 100%);
+            color: #3c83ed;
+            font-weight: 600;
+            border-radius: 1rem;
+            box-shadow: 0 1px 4px rgba(13,110,253,0.07);
+        }
+        .list-group {
+            gap: 0.2rem;
+        }
+        .pagination {
+            --bs-pagination-bg: #fff;
+            --bs-pagination-border-color: #e3e8f0;
+            --bs-pagination-hover-bg: #f4f8ff;
+            --bs-pagination-active-bg: #0d6efd;
+            --bs-pagination-active-border-color: #0d6efd;
+            --bs-pagination-color: #0d6efd;
+            --bs-pagination-active-color: #fff;
+            font-size: 0.97rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            max-width: 100%;
+            padding-bottom: 2px;
+            gap: 0.35rem;
+        }
+        .pagination .page-item.active .page-link {
+            box-shadow: 0 2px 8px rgba(13,110,253,0.13);
+            border: 1.5px solid #0d6efd;
+        }
+        .pagination .page-link {
+            border-radius: 0.7rem;
+            margin: 0;
+            border: 1px solid #e3e8f0;
+            color: #0d6efd;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            min-width: 2.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            white-space: nowrap;
+            box-shadow: 0 1px 4px rgba(13,110,253,0.04);
+            font-weight: 500;
+        }
+        .pagination .page-link:hover {
+            background: #e3f0ff;
+            color: #0a58ca;
+            box-shadow: 0 2px 8px rgba(13,110,253,0.10);
+            border: 1.5px solid #b6d0ff;
+        }
+        @media (max-width: 700px) {
+            .container {
+                padding: 0.3rem 0.7rem 0.7rem 0.7rem;
+                margin-top: 0.7rem;
+                margin-bottom: 0.7rem;
+            }
+            .news-item {
+                padding: 0.7rem 0.7rem 0.4rem 0.7rem;
+            }
+            .pagination {
+                font-size: 0.91rem;
+                max-width: 100vw;
+            }
+            .pagination .page-link {
+                min-width: 1.7rem;
+                padding-left: 0.3rem;
+                padding-right: 0.3rem;
+            }
+            header .d-flex {
+                flex-direction: column !important;
+                gap: 0.2em !important;
+            }
+            .elegant-header .d-flex {
+                flex-direction: row !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 0.5em !important;
+                margin-bottom: 0.7em !important;
+            }
+            .elegant-header .gap-2 {
+                width: 100%;
+                justify-content: center !important;
+            }
+            .sort-btn {
+                min-width: 0;
+                flex: 1 1 0;
+                text-align: center;
+                margin: 0 0.1em;
+            }
+        }
+        .sort-btn {
+            position: relative;
+            background: linear-gradient(120deg, rgba(255,255,255,0.55) 60%, rgba(220,235,255,0.38) 100%);
+            color: #6a7ba8;
+            font-weight: 500;
+            border-radius: 1.3rem;
+            border: 1.5px solid rgba(180,200,255,0.18);
+            box-shadow: 0 2px 12px 0 rgba(60,72,88,0.07), 0 1.5px 8px 0 rgba(13,110,253,0.06);
+            backdrop-filter: blur(10px) saturate(1.2);
+            -webkit-backdrop-filter: blur(10px) saturate(1.2);
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s, border 0.18s;
+            overflow: hidden;
+        }
+        .sort-btn.active, .sort-btn:active {
+            background: linear-gradient(120deg, rgba(220,235,255,0.75) 60%, rgba(255,255,255,0.55) 100%);
+            color: #0d6efd;
+            border: 1.5px solid rgba(13,110,253,0.18);
+            box-shadow: 0 4px 18px 0 rgba(13,110,253,0.10), 0 1.5px 8px 0 rgba(13,110,253,0.08);
+        }
+        .sort-btn:hover {
+            background: linear-gradient(120deg, rgba(220,235,255,0.85) 60%, rgba(255,255,255,0.65) 100%);
+            color: #0a58ca;
+            border: 1.5px solid rgba(13,110,253,0.22);
+            box-shadow: 0 6px 24px 0 rgba(13,110,253,0.13), 0 1.5px 8px 0 rgba(13,110,253,0.10);
+        }
+        .sort-btn::after {
+            content: '';
+            position: absolute;
+            left: 10%;
+            top: 0;
+            width: 80%;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(90deg,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.08) 100%);
+            opacity: 0.7;
+            border-radius: 1.3rem;
+            filter: blur(2.5px);
+        }
+        .elegant-header {
+            min-height: 4.5rem;
+        }
+        .header-title-group {
+            position: relative;
+            padding-bottom: 0.7rem;
+        }
+        .elegant-title {
+            font-family: 'AlibabaPuHuiTi-Bold', sans-serif;
+            font-size: 1.55rem;
+            letter-spacing: 2.5px;
+            color: #0d6efd;
+            text-shadow: 0 2px 8px rgba(13,110,253,0.13), 0 0px 0px #fff;
+        }
+        .elegant-subtitle {
+            font-size: 0.98rem;
+            color: #4b5e7a;
+            margin-bottom: 0.1em;
+        }
+        .elegant-update {
+            right: -1.5em;
+            bottom: 0.1em;
+            font-size: 0.91rem;
+            color: #7a8599;
+            opacity: 0.85;
+        }
+        .header-title-group {
+            text-align: center;
+        }
+        @media (max-width: 700px) {
+            .elegant-header {
+                min-height: unset;
+            }
+            .header-title-group {
+                padding-bottom: 0.2rem;
+            }
+            .elegant-update {
+                position: static !important;
+                display: block;
+                margin: 0.3em auto 0 auto;
+                text-align: center;
+            }
+        }
+        .animated-title {
+            font-family: 'AlibabaPuHuiTi-Bold', sans-serif;
+            font-size: 1.55rem;
+            letter-spacing: 2.5px;
+            color: #0d6efd;
+            text-shadow: 0 2px 8px rgba(13,110,253,0.13), 0 0px 0px #fff;
+            animation: title-scale 3.2s ease-in-out infinite;
+        }
+        @keyframes title-scale {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.045); }
+            100% { transform: scale(1); }
+        }
+        @media (max-width: 700px) {
+            .container-fluid > .d-flex {
+                flex-direction: column !important;
+                gap: 0.2em !important;
+            }
+            .elegant-header {
+                min-height: unset;
+            }
+        }
+        .spin-flat {
+            animation: spinflat 1.1s linear infinite;
+        }
+        @keyframes spinflat {
+            100% { transform: rotate(360deg); }
+        }
+        .title-tab {
+            display: inline-block;
+            width: 1.1em;
+            height: 1.1em;
+            border-radius: 0.22em;
+            background: linear-gradient(120deg, #3b8cff 10%, #60aaff 90%);
+            margin-right: 0.1em;
+            box-shadow: 0 2px 8px rgba(13,110,253,0.10);
+        }
+        .title-divider {
+            display: inline-block;
+            width: 1px;
+            height: 1.1em;
+            background: linear-gradient(180deg,#e0e6ef 60%,#f5f7fa 100%);
+            margin: 0 0.5em 0 0.4em;
+            vertical-align: middle;
+            border-radius: 1px;
+        }
+    </style>
+</head>
+<body style="min-height:100vh;display:flex;flex-direction:column;">
+    <!-- 顶部副标题和更新时间，横向排列，圆角背景外，风格更隐蔽 -->
+    <div class="container-fluid" style="max-width:900px;margin:0 auto;">
+        <div class="d-flex justify-content-end align-items-center mt-1 mb-0" style="opacity:0.56;font-size:0.85rem;letter-spacing:0.01em;min-height:1.2em;line-height:1.1;height:2.1em;">
+            <span class="d-flex align-items-center" style="color:#b0b8c9;">
+                <span id="loading-spinner" style="display:inline-flex;align-items:center;justify-content:center;width:0.95em;height:0.95em;margin-right:0.22em;">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="display:block;" xmlns="http://www.w3.org/2000/svg" class="spin-flat"><circle cx="10" cy="10" r="8" stroke="#b0b8c9" stroke-width="1.3" opacity="0.28"/><path d="M18 10a8 8 0 0 0-8-8" stroke="#7a8599" stroke-width="1.6" stroke-linecap="round"/></svg>
+                </span>
+                <span id="last-updated">最后更新: <span id="update-time">刚刚</span></span>
+            </span>
+        </div>
+    </div>
+    <div class="container py-4" style="flex:1 0 auto;">
+        <header class="mb-1 position-relative elegant-header" style="margin-top:0.55rem;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-0" style="margin-bottom:0.3rem;">
+                <h1 class="fw-bold m-0 elegant-title text-start" style="font-size:1.55rem;display:flex;align-items:center;gap:0.5em;">
+                    <img src="/static/logo.jpg" alt="logo" style="width:1.25em;height:1.25em;object-fit:contain;vertical-align:middle;margin-right:0.1em;border-radius:0.22em;box-shadow:0 2px 8px rgba(13,110,253,0.10);background:#8a99b3;">
+                    <span><span style="font-family:'AlibabaPuHuiTi-Bold',sans-serif;">半闻驿</span> <span class="title-divider"></span><span style="font-family:'AlibabaPuHuiTi-Light',sans-serif;font-size:1.05rem;color:#8fa0b8;letter-spacing:0.5px;vertical-align:middle;margin-left:0.3em;">HalferNews</span></span>
+                </h1>
+                <div class="d-flex gap-2">
+                    <a href="?sort=time" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='time' %}active{% endif %}">最新</a>
+                    <a href="?sort=score" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='score' %}active{% endif %}">热门</a>
+                    <a href="?sort=featured" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='featured' %}active{% endif %}">精选</a>
+                </div>
+            </div>
+        </header>
+        
+        <div class="list-group" id="news-list" style="margin-top:-0.7rem;">
+            {% for item in news_items %}
+            {% if sort == 'featured' %}
+            <a href="{{ item.original_url }}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2">
+                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                    <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                </div>
+                {% if item.time is defined and item.time %}
+                <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+                    <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </span>
+                    {{ item.time | datetimeformat }}
+                </p>
+                {% endif %}
+            </a>
+            {% else %}
+            <a href="{{ item.original_url }}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2">
+                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                    <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                    <span class="badge score-badge">{{ item.score }}分</span>
+                </div>
+                <p class="original-title mt-1">{{ item.original_title }}</p>
+                {% if item.time is defined and item.time %}
+                <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+                    <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </span>
+                    {{ item.time | datetimeformat }}
+                </p>
+                {% endif %}
+            </a>
+            {% endif %}
+            {% else %}
+            <div class="alert alert-info text-center">
+                <p>正在获取最新新闻，请稍候...</p>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="flex:0 0 auto;">
+        {% if pagination.pages > 1 or pagination.pages == 1 %}
+        <nav aria-label="分页导航" class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="?page=1{% if sort %}&sort={{ sort }}{% endif %}">首页</a>
+                </li>
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ pagination.prev_num }}{% if sort %}&sort={{ sort }}{% endif %}" tabindex="-1">上一页</a>
+                </li>
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ pagination.next_num }}{% if sort %}&sort={{ sort }}{% endif %}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        </div>
+    </div>
+
+    <!-- 页面底部说明性文字，风格更隐蔽 -->
+    <div class="text-center text-muted" style="font-size:0.82rem; margin-top:0.2rem; opacity:0.62; letter-spacing:0.01em;flex-shrink:0;">
+        本站引用的 Hacker News 数据及相关内容遵循 MIT License，原始项目版权归 <a href="https://github.com/HackerNews/API" target="_blank" style="color:#8fa0b8;text-decoration:underline dotted;">Hacker News</a> 及其贡献者所有。
+    </div>
+
+    <script>
+        // 自动刷新页面
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('update-time').textContent = 
+                `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        // 初始更新
+        updateLastUpdated();
+        
+        // 每5分钟刷新页面
+        setInterval(() => {
+            window.location.reload();
+        }, 300000);
+        
+        // 每分钟更新一次时间显示
+        setInterval(updateLastUpdated, 60000);
+    </script>
+</body>
+</html>
