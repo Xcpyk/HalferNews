@@ -145,14 +145,21 @@ def report_news():
 def api_news():
     ids = request.args.get('ids')
     if ids:
-        # 支持批量ID查询，按传入顺序返回
         id_list = [int(i) for i in ids.split(',') if i.isdigit()]
-        news = NewsItem.query.filter(NewsItem.id.in_(id_list)).all()
+        # 只查已翻译的新闻
+        news = NewsItem.query.filter(
+            NewsItem.id.in_(id_list),
+            NewsItem.translation_status == 2,
+            NewsItem.translated_title != None,
+            NewsItem.translated_title != ''
+        ).all()
+        # 按分数排序
+        news.sort(key=lambda n: n.score, reverse=True)
         news_dict = {n.id: n for n in news}
         result = []
         for nid in id_list:
             n = news_dict.get(nid)
-            if n and n.translated_title:
+            if n:
                 result.append({
                     'id': n.id,
                     'title': n.original_title,
