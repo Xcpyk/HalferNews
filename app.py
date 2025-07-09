@@ -80,15 +80,15 @@ def fetch_and_translate_news():
 
 @app.route('/')
 def index():
-    # 只渲染精选新闻，其他新闻由前端JS获取
     sort = request.args.get('sort', 'featured')
     if sort == 'featured':
         news_items = custom_news
         pagination = type('obj', (object,), {'pages': 1, 'has_prev': False, 'has_next': False, 'prev_num': 1, 'next_num': 1})()
         page = 1
     else:
+        # 其他情况也返回空列表和空分页，防止模板报错
         news_items = []
-        pagination = None
+        pagination = type('obj', (object,), {'pages': 1, 'has_prev': False, 'has_next': False, 'prev_num': 1, 'next_num': 1})()
         page = 1
     return render_template('index.html', news_items=news_items, pagination=pagination, page=page, sort=sort)
 
