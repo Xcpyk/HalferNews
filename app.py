@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from models import db, NewsItem
 from moonshot import MoonshotTranslator
@@ -33,6 +33,9 @@ PROXIES = {
     "http": "http://183.129.171.18:8080",
     "https": "http://183.129.171.18:8080"
 }
+
+# 简单的内存缓存（进程级，重启失效）
+translate_cache = {}
 
 def fetch_and_translate_news():
     """获取并翻译新闻的后台任务"""
@@ -91,6 +94,22 @@ def index():
         pagination = type('obj', (object,), {'pages': 1, 'has_prev': False, 'has_next': False, 'prev_num': 1, 'next_num': 1})()
         page = 1
     return render_template('index.html', news_items=news_items, pagination=pagination, page=page, sort=sort)
+
+@app.route('/api/translate', methods=['POST'])
+def api_translate():
+    data = request.get_json()
+    title = data.get('title', '')
+    if not title:
+        return jsonify({'translated': ''})
+    # 缓存命中直接返回
+    if title in translate_cache:
+        return jsonify({'translated': translate_cache[title]})
+    try:
+        translated = translator.translate_title(title)
+        translate_cache[title] = translated
+        return jsonify({'translated': translated})
+    except Exception as e:
+        return jsonify({'translated': ''})
 
 def run_background_task():
     """启动后台任务定时获取并翻译新闻"""

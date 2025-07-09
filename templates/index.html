@@ -386,24 +386,39 @@
     </script>
 
     <script>
-function loadNews(type) {
-    let url = type === 'score'
-        ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
-        : 'https://hacker-news.firebaseio.com/v0/newstories.json';
-    fetch(url)
-      .then(res => res.json())
-      .then(ids => {
-          // 取前20条，继续 fetch 详情
-          return Promise.all(ids.slice(0, 20).map(id =>
-              fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
-          ));
-      })
-      .then(items => {
-          // 渲染到 #dynamic-news
-          let html = items.map(item =>
+const translationCache = {};
+const NEWS_CACHE_KEY = 'cachedNews';
+
+function translateTitle(title) {
+    if (!title) return Promise.resolve('');
+    if (translationCache[title]) {
+        return Promise.resolve(translationCache[title]);
+    }
+    return fetch('/api/translate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title})
+    })
+    .then(res => res.json())
+    .then(data => {
+        translationCache[title] = data.translated || title;
+        return translationCache[title];
+    })
+    .catch(() => title);
+}
+
+// 渲染新闻
+function renderNewsWithTranslation(items, insert = false) {
+    Promise.all(items.map(item =>
+        translateTitle(item.title).then(translated => {
+            item.translated_title = translated;
+            return item;
+        })
+    )).then(itemsWithTranslation => {
+        let html = itemsWithTranslation.map(item =>
             `<a href="${item.url || '#'}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2">
                 <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                  <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.title || ''}</h5>
+                  <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title || ''}</h5>
                   <span class="badge score-badge">${item.score || 0}分</span>
                 </div>
                 <p class="original-title mt-1">${item.title || ''}</p>
@@ -414,19 +429,76 @@ function loadNews(type) {
                   ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
                 </p>
             </a>`
-          ).join('');
-          document.getElementById('dynamic-news').innerHTML = html;
+        ).join('');
+        if (insert) {
+            document.getElementById('dynamic-news').insertAdjacentHTML('afterbegin', html);
+        } else {
+            document.getElementById('dynamic-news').innerHTML = html;
+        }
+    }).catch(() => {
+        document.getElementById('news-error').style.display = 'block';
+    });
+}
+
+// 获取本地缓存
+function getCachedNews() {
+    const cache = localStorage.getItem(NEWS_CACHE_KEY);
+    return cache ? JSON.parse(cache) : [];
+}
+
+// 保存到本地缓存
+function setCachedNews(news) {
+    localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(news));
+}
+
+// 加载新闻（首次或定时）
+function loadNews(type, isInsert = false) {
+    let url = type === 'score'
+        ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
+        : 'https://hacker-news.firebaseio.com/v0/newstories.json';
+    fetch(url)
+      .then(res => res.json())
+      .then(ids => {
+          // 取前20条
+          return Promise.all(ids.slice(0, 20).map(id =>
+              fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
+          ));
+      })
+      .then(items => {
+          let cached = getCachedNews();
+          // 只保留未出现过的新新闻
+          let cachedIds = new Set(cached.map(item => item.id));
+          let newItems = items.filter(item => !cachedIds.has(item.id));
+          if (newItems.length > 0) {
+              // 新新闻插入到缓存前面
+              let updated = [...newItems, ...cached];
+              // 最多缓存100条
+              setCachedNews(updated.slice(0, 100));
+              renderNewsWithTranslation(newItems, true); // 插入式渲染
+          }
+          if (!isInsert) {
+              // 首次加载时渲染全部缓存
+              renderNewsWithTranslation(cached.length ? cached : items);
+          }
       })
       .catch(err => {
           document.getElementById('news-error').style.display = 'block';
       });
 }
 
-// 只有不是精选时才加载
+// 页面加载时，先渲染本地缓存，再拉取新新闻
 const urlParams = new URLSearchParams(window.location.search);
 const sort = urlParams.get('sort');
 if (sort !== 'featured' && sort !== null) {
-    loadNews(sort);
+    // 先渲染本地缓存
+    let cached = getCachedNews();
+    if (cached.length) {
+        renderNewsWithTranslation(cached);
+    }
+    // 拉取新新闻并插入
+    loadNews(sort, true);
+    // 可选：定时自动拉取新新闻
+    setInterval(() => loadNews(sort, true), 300000); // 每5分钟拉取一次
 }
 </script>
 </body>
