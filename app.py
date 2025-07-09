@@ -28,13 +28,19 @@ ITEM_URL = f"{HN_API}/item/"
 # 初始化翻译器
 translator = MoonshotTranslator()
 
+# === 添加 PROXIES 配置 ===
+PROXIES = {
+    "http": "http://183.129.171.18:8080",
+    "https": "http://183.129.171.18:8080"
+}
+
 def fetch_and_translate_news():
     """获取并翻译新闻的后台任务"""
     with app.app_context():
         # 获取最新和热门故事ID
         # 默认抓取最新和热门各30条，避免数据库缺失
-        top_ids = requests.get(TOP_STORIES_URL).json()[:30]
-        new_ids = requests.get(NEW_STORIES_URL).json()[:30]
+        top_ids = requests.get(TOP_STORIES_URL, proxies=PROXIES, timeout=10).json()[:30]
+        new_ids = requests.get(NEW_STORIES_URL, proxies=PROXIES, timeout=10).json()[:30]
         story_ids = list(dict.fromkeys(new_ids + top_ids))  # 保证唯一且顺序优先最新
         
         for story_id in story_ids:
@@ -42,7 +48,7 @@ def fetch_and_translate_news():
             item = NewsItem.query.get(story_id)
             if not item:
                 # 从HN API获取详情
-                story_data = requests.get(f"{ITEM_URL}{story_id}.json").json()
+                story_data = requests.get(f"{ITEM_URL}{story_id}.json", proxies=PROXIES, timeout=10).json()
                 # 创建新记录
                 item = NewsItem(
                     id=story_id,
@@ -74,40 +80,16 @@ def fetch_and_translate_news():
 
 @app.route('/')
 def index():
-    """首页显示新闻列表，支持分页"""
-    # 获取当前页码，默认为1
-    page = request.args.get('page', 1, type=int)
-    per_page = 40
-    # 获取排序方式，默认为time
-    sort = request.args.get('sort', 'time')
-    if sort == 'score':
-        # 热门：topstories，按score排序
-        ids = requests.get(TOP_STORIES_URL).json()[:500]
-        query = NewsItem.query.filter(
-            NewsItem.translation_status == 2,
-            NewsItem.id.in_(ids),
-            ~NewsItem.original_title.startswith('Ask HN')
-        )
-        order_by = NewsItem.score.desc()
-        pagination = query.order_by(order_by).paginate(page=page, per_page=per_page, error_out=False)
-        news_items = pagination.items
-    elif sort == 'featured':
-        # 精选：只显示custom_news
+    # 只渲染精选新闻，其他新闻由前端JS获取
+    sort = request.args.get('sort', 'featured')
+    if sort == 'featured':
         news_items = custom_news
         pagination = type('obj', (object,), {'pages': 1, 'has_prev': False, 'has_next': False, 'prev_num': 1, 'next_num': 1})()
         page = 1
     else:
-        # 最新：newstories，按time排序
-        ids = requests.get(NEW_STORIES_URL).json()[:500]
-        query = NewsItem.query.filter(
-            NewsItem.translation_status == 2,
-            NewsItem.id.in_(ids),
-            ~NewsItem.original_title.startswith('Ask HN')
-        )
-        order_by = NewsItem.time.desc()
-        pagination = query.order_by(order_by).paginate(page=page, per_page=per_page, error_out=False)
-        news_items = pagination.items
-
+        news_items = []
+        pagination = None
+        page = 1
     return render_template('index.html', news_items=news_items, pagination=pagination, page=page, sort=sort)
 
 def run_background_task():
@@ -143,4 +125,4 @@ if __name__ == '__main__':
     bg_thread.start()
     
     # 启动Flask应用
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=True)
