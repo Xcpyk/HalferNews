@@ -422,35 +422,45 @@ function setNewsCache(tab, news) {
     localStorage.setItem(getCacheKey(tab), JSON.stringify(news));
 }
 
-// 拉取服务器已翻译新闻
-function fetchServerNews(tab, ids, sort) {
+function renderNewsListByIds(ids, translatedList, allItems) {
+    // 用id做映射
+    const translatedMap = {};
+    translatedList.forEach(n => { translatedMap[n.id] = n; });
+    const allMap = {};
+    allItems.forEach(n => { allMap[n.id] = n; });
+    // 按ids顺序渲染
+    const merged = ids.map(id => {
+        if (translatedMap[id]) {
+            return Object.assign({}, allMap[id], { translated_title: translatedMap[id].translated_title });
+        } else if (allMap[id]) {
+            return Object.assign({}, allMap[id], { translated_title: '暂无翻译' });
+        } else {
+            return { id, translated_title: '暂无翻译', title: '', url: '', score: 0, time: 0 };
+        }
+    });
+    renderNewsList(merged);
+}
+
+function fetchServerNews(tab, ids, sort, allItems) {
     if (!ids.length) return;
     fetch(`/api/news?ids=${ids.join(',')}`)
       .then(res => res.json())
       .then(news => {
-          // 热门按分数排序，最新按时间排序
-          if (sort === 'score') {
-              news.sort((a, b) => b.score - a.score);
-          } else {
-              news.sort((a, b) => b.time - a.time);
-          }
+          renderNewsListByIds(ids, news, allItems);
           setNewsCache(tab, news);
-          renderNewsList(news);
       })
       .catch(() => {
-          // 静默失败，不提示
+          // 静默失败
       });
 }
 
-// 切换标签时
 function switchTab(tab, ids, sort) {
-    // 1. 优先渲染本地缓存
-    const cached = getNewsCache(tab);
-    if (cached.length) {
-        renderNewsList(cached);
-    }
-    // 2. 异步拉取服务器数据，拉取到后刷新
-    fetchServerNews(tab, ids, sort);
+    // 先获取所有原始item
+    Promise.all(ids.map(id =>
+        fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
+    )).then(allItems => {
+        fetchServerNews(tab, ids, sort, allItems);
+    });
 }
 
 let currentTab = 'time';
