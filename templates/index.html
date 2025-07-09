@@ -385,6 +385,7 @@
         setInterval(updateLastUpdated, 60000);
     </script>
 
+    {% set custom_news_ids = custom_news|map(attribute='id')|list if custom_news else [] %}
     <script>
 // 缓存key
 function getCacheKey(tab) {
@@ -441,12 +442,55 @@ function renderNewsListByIds(ids, translatedList, allItems) {
     renderNewsList(merged);
 }
 
+// 只在非精选页面注入 customNewsIds
+var customNewsIds = {{ custom_news_ids|tojson|safe }};
+
+function renderNewsSkeleton(ids, allItems) {
+    const allMap = {};
+    allItems.forEach(n => { allMap[n.id] = n; });
+    const merged = ids.map(id => {
+        if (allMap[id]) {
+            return Object.assign({}, allMap[id], { translated_title: '暂无翻译' });
+        } else {
+            return { id, translated_title: '暂无翻译', title: '', url: '', score: 0, time: 0 };
+        }
+    });
+    // 渲染时加data-news-id和news-title类
+    let html = merged.map(item =>
+        `<a href="${item.url || '#'}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2" data-news-id="${item.id}">
+            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+              <h5 class="mb-1 news-title" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title || '暂无翻译'}</h5>
+              <span class="badge score-badge">${item.score || 0}分</span>
+            </div>
+            <p class="original-title mt-1">${item.title || ''}</p>
+            <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+              <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </span>
+              ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
+            </p>
+        </a>`
+    ).join('');
+    document.getElementById('dynamic-news').innerHTML = html;
+}
+
+function updateTranslatedTitles(ids, translatedList) {
+    const translatedMap = {};
+    translatedList.forEach(n => { translatedMap[n.id] = n.translated_title; });
+    ids.forEach(id => {
+        if (translatedMap[id]) {
+            const el = document.querySelector(`[data-news-id='${id}'] .news-title`);
+            if (el) el.textContent = translatedMap[id];
+        }
+    });
+}
+
 function fetchServerNews(tab, ids, sort, allItems) {
     if (!ids.length) return;
     fetch(`/api/news?ids=${ids.join(',')}`)
       .then(res => res.json())
       .then(news => {
-          renderNewsListByIds(ids, news, allItems);
+          updateTranslatedTitles(ids, news);
           setNewsCache(tab, news);
       })
       .catch(() => {
@@ -455,11 +499,13 @@ function fetchServerNews(tab, ids, sort, allItems) {
 }
 
 function switchTab(tab, ids, sort) {
-    // 先获取所有原始item
-    Promise.all(ids.map(id =>
+    // 排除custom_news_ids
+    const filteredIds = ids.filter(id => !customNewsIds.includes(id));
+    Promise.all(filteredIds.map(id =>
         fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
     )).then(allItems => {
-        fetchServerNews(tab, ids, sort, allItems);
+        renderNewsSkeleton(filteredIds, allItems);
+        fetchServerNews(tab, filteredIds, sort, allItems);
     });
 }
 
