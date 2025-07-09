@@ -453,35 +453,71 @@ function switchTab(tab, ids, sort) {
     fetchServerNews(tab, ids, sort);
 }
 
+let currentTab = 'time';
+let currentSort = 'time';
+let currentIds = [];
+
+function refreshCurrentTab() {
+    if (currentIds.length) {
+        fetchServerNews(currentTab, currentIds, currentSort);
+    }
+}
+
 // 监听标签切换
-// 假设你的标签按钮有 data-tab 属性：data-tab="time" 或 data-tab="score"
+// 最新/热门用JS切换，精选跳转后端
+// 按钮HTML需如下：
+// <a href="#" class="btn ... sort-btn ..." data-tab="time">最新</a>
+// <a href="#" class="btn ... sort-btn ..." data-tab="score">热门</a>
+// <a href="?sort=featured" class="btn ... sort-btn ..." data-tab="featured">精选</a>
 document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
-        e.preventDefault();
         const tab = this.getAttribute('data-tab');
+        if (tab === 'featured') {
+            // 精选直接跳转后端页面
+            return;
+        }
+        // 最新/热门阻止跳转
+        e.preventDefault();
+        // 切换按钮active状态
+        document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        // 获取榜单ID并切换内容
         const sort = tab === 'score' ? 'score' : 'time';
-        // 获取对应榜单ID
         let url = tab === 'score'
             ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
             : 'https://hacker-news.firebaseio.com/v0/newstories.json';
         fetch(url)
           .then(res => res.json())
           .then(ids => {
-              switchTab(tab, ids.slice(0, 20), sort);
+              currentTab = tab;
+              currentSort = sort;
+              currentIds = ids.slice(0, 20);
+              switchTab(tab, currentIds, sort);
           });
     });
 });
 
 // 页面首次加载
 window.addEventListener('DOMContentLoaded', function() {
+    // 判断当前是否精选
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    if (sort === 'featured') {
+        // 精选由后端渲染，无需JS处理
+        return;
+    }
     // 默认tab
     let tab = 'time';
     let url = 'https://hacker-news.firebaseio.com/v0/newstories.json';
     fetch(url)
       .then(res => res.json())
       .then(ids => {
-          switchTab(tab, ids.slice(0, 20), 'time');
+          currentTab = tab;
+          currentSort = 'time';
+          currentIds = ids.slice(0, 20);
+          switchTab(tab, currentIds, 'time');
       });
+    setInterval(refreshCurrentTab, 300000); // 5分钟自动刷新
 });
 </script>
 </body>
