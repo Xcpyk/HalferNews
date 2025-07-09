@@ -451,6 +451,14 @@ function setCachedNews(news) {
     localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(news));
 }
 
+function reportNewsToServer(items) {
+    fetch('/api/report_news', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(items)
+    });
+}
+
 // 加载新闻（首次或定时）
 function loadNews(type, isInsert = false) {
     let url = type === 'score'
@@ -480,6 +488,8 @@ function loadNews(type, isInsert = false) {
               // 首次加载时渲染全部缓存
               renderNewsWithTranslation(cached.length ? cached : items);
           }
+          // 批量上报所有拉取到的新闻到服务器
+          reportNewsToServer(items);
       })
       .catch(err => {
           document.getElementById('news-error').style.display = 'block';

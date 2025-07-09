@@ -111,6 +111,36 @@ def api_translate():
     except Exception as e:
         return jsonify({'translated': ''})
 
+@app.route('/api/report_news', methods=['POST'])
+def report_news():
+    news_list = request.get_json() or []
+    saved_ids = []
+    for item in news_list:
+        news_id = item.get('id')
+        if not news_id:
+            continue
+        # 查找数据库是否已有
+        news = NewsItem.query.get(news_id)
+        if not news:
+            # 翻译标题
+            translated = translator.translate_title(item.get('title', ''))
+            news = NewsItem(
+                id=news_id,
+                original_title=item.get('title', ''),
+                translated_title=translated,
+                original_url=item.get('url', ''),
+                score=item.get('score', 0),
+                time=item.get('time', 0),
+                translation_status=2 if translated else 3
+            )
+            db.session.add(news)
+            saved_ids.append(news_id)
+        else:
+            # 已有则可选择更新翻译（可选）
+            pass
+    db.session.commit()
+    return jsonify({'saved': saved_ids, 'count': len(saved_ids)})
+
 def run_background_task():
     """启动后台任务定时获取并翻译新闻"""
     import time
