@@ -459,7 +459,53 @@ function reportNewsToServer(items) {
     });
 }
 
-// 加载新闻（首次或定时）
+// 获取已翻译新闻，按ID顺序返回，未翻译的用原文补全
+function fetchTranslatedNewsByIds(ids, items) {
+    if (!ids.length) return;
+    fetch(`/api/news?ids=${ids.join(',')}`)
+      .then(res => res.json())
+      .then(translatedList => {
+          // 用id做映射
+          const translatedMap = {};
+          translatedList.forEach(n => { translatedMap[n.id] = n; });
+          // 合并：有翻译用翻译，无翻译用原文
+          const merged = items.map(item => {
+              if (translatedMap[item.id]) {
+                  return Object.assign({}, item, { translated_title: translatedMap[item.id].translated_title });
+              } else {
+                  return Object.assign({}, item, { translated_title: item.title });
+              }
+          });
+          renderNewsWithTranslation(merged);
+      })
+      .catch(() => {
+          document.getElementById('news-error').style.display = 'block';
+      });
+}
+
+// 修改 fetchTranslatedNews，先获取ID和原文，再批量查翻译
+function fetchTranslatedNews(type) {
+    let url = type === 'score'
+        ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
+        : 'https://hacker-news.firebaseio.com/v0/newstories.json';
+    fetch(url)
+      .then(res => res.json())
+      .then(ids => {
+          // 取前20条
+          return Promise.all(ids.slice(0, 20).map(id =>
+              fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
+          ));
+      })
+      .then(items => {
+          const ids = items.map(item => item.id);
+          fetchTranslatedNewsByIds(ids, items);
+      })
+      .catch(() => {
+          document.getElementById('news-error').style.display = 'block';
+      });
+}
+
+// 修改 loadNews，避免重复上报
 function loadNews(type, isInsert = false) {
     let url = type === 'score'
         ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
@@ -488,27 +534,24 @@ function loadNews(type, isInsert = false) {
               // 首次加载时渲染全部缓存
               renderNewsWithTranslation(cached.length ? cached : items);
           }
-          // 批量上报所有拉取到的新闻到服务器
-          reportNewsToServer(items);
+          // 只上报未出现过的新新闻到服务器
+          if (newItems.length > 0) {
+              reportNewsToServer(newItems);
+          }
       })
       .catch(err => {
           document.getElementById('news-error').style.display = 'block';
       });
 }
 
-// 页面加载时，先渲染本地缓存，再拉取新新闻
+// 页面加载时，优先获取已翻译新闻
 const urlParams = new URLSearchParams(window.location.search);
 const sort = urlParams.get('sort');
 if (sort !== 'featured' && sort !== null) {
-    // 先渲染本地缓存
-    let cached = getCachedNews();
-    if (cached.length) {
-        renderNewsWithTranslation(cached);
-    }
+    fetchTranslatedNews(sort);
     // 拉取新新闻并插入
     loadNews(sort, true);
-    // 可选：定时自动拉取新新闻
-    setInterval(() => loadNews(sort, true), 300000); // 每5分钟拉取一次
+    setInterval(() => loadNews(sort, true), 300000);
 }
 </script>
 </body>

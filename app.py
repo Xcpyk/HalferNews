@@ -141,6 +141,47 @@ def report_news():
     db.session.commit()
     return jsonify({'saved': saved_ids, 'count': len(saved_ids)})
 
+@app.route('/api/news')
+def api_news():
+    ids = request.args.get('ids')
+    if ids:
+        # 支持批量ID查询，按传入顺序返回
+        id_list = [int(i) for i in ids.split(',') if i.isdigit()]
+        news = NewsItem.query.filter(NewsItem.id.in_(id_list)).all()
+        news_dict = {n.id: n for n in news}
+        result = []
+        for nid in id_list:
+            n = news_dict.get(nid)
+            if n and n.translated_title:
+                result.append({
+                    'id': n.id,
+                    'title': n.original_title,
+                    'translated_title': n.translated_title,
+                    'url': n.original_url,
+                    'score': n.score,
+                    'time': n.time
+                })
+        return jsonify(result)
+    # 兼容老逻辑
+    sort = request.args.get('sort', 'time')
+    limit = int(request.args.get('limit', 20))
+    query = NewsItem.query.filter(NewsItem.translated_title != None, NewsItem.translated_title != '')
+    if sort == 'score':
+        query = query.order_by(NewsItem.score.desc())
+    else:
+        query = query.order_by(NewsItem.time.desc())
+    news = query.limit(limit).all()
+    return jsonify([
+        {
+            'id': n.id,
+            'title': n.original_title,
+            'translated_title': n.translated_title,
+            'url': n.original_url,
+            'score': n.score,
+            'time': n.time
+        } for n in news
+    ])
+
 def run_background_task():
     """启动后台任务定时获取并翻译新闻"""
     import time
