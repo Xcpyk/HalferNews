@@ -143,33 +143,6 @@ def report_news():
 
 @app.route('/api/news')
 def api_news():
-    ids = request.args.get('ids')
-    if ids:
-        id_list = [int(i) for i in ids.split(',') if i.isdigit()]
-        # 只查已翻译的新闻
-        news = NewsItem.query.filter(
-            NewsItem.id.in_(id_list),
-            NewsItem.translation_status == 2,
-            NewsItem.translated_title != None,
-            NewsItem.translated_title != ''
-        ).all()
-        # 按分数排序
-        news.sort(key=lambda n: n.score, reverse=True)
-        news_dict = {n.id: n for n in news}
-        result = []
-        for nid in id_list:
-            n = news_dict.get(nid)
-            if n:
-                result.append({
-                    'id': n.id,
-                    'title': n.original_title,
-                    'translated_title': n.translated_title,
-                    'url': n.original_url,
-                    'score': n.score,
-                    'time': n.time
-                })
-        return jsonify(result)
-    # 兼容老逻辑
     sort = request.args.get('sort', 'time')
     limit = int(request.args.get('limit', 20))
     query = NewsItem.query.filter(NewsItem.translated_title != None, NewsItem.translated_title != '')

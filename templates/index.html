@@ -307,8 +307,8 @@
                     <span><span style="font-family:'AlibabaPuHuiTi-Bold',sans-serif;">半闻驿</span> <span class="title-divider"></span><span style="font-family:'AlibabaPuHuiTi-Light',sans-serif;font-size:1.05rem;color:#8fa0b8;letter-spacing:0.5px;vertical-align:middle;margin-left:0.3em;">HalferNews</span></span>
                 </h1>
                 <div class="d-flex gap-2">
-                    <a href="?sort=time" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='time' %}active{% endif %}" data-tab="time">最新</a>
-                    <a href="?sort=score" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='score' %}active{% endif %}" data-tab="score">热门</a>
+                    <a href="?sort=time" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='time' %}active{% endif %}">最新</a>
+                    <a href="?sort=score" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='score' %}active{% endif %}">热门</a>
                     <a href="?sort=featured" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='featured' %}active{% endif %}">精选</a>
                 </div>
             </div>
@@ -385,198 +385,142 @@
         setInterval(updateLastUpdated, 60000);
     </script>
 
-    {% set custom_news_ids = custom_news|map(attribute='id')|list if custom_news else [] %}
-    {% if sort != 'featured' %}
     <script>
-// 缓存key
-function getCacheKey(tab) {
-    return 'news_cache_' + tab;
+const translationCache = {};
+const NEWS_CACHE_KEY = 'cachedNews';
+
+function translateTitle(title) {
+    if (!title) return Promise.resolve('');
+    if (translationCache[title]) {
+        return Promise.resolve(translationCache[title]);
+    }
+    return fetch('/api/translate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title})
+    })
+    .then(res => res.json())
+    .then(data => {
+        translationCache[title] = data.translated || title;
+        return translationCache[title];
+    })
+    .catch(() => title);
 }
 
 // 渲染新闻
-function renderNewsList(news) {
-    let html = news.map(item =>
-        `<a href="${item.url || '#'}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2" data-news-id="${item.id}">
-            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-              <h5 class="mb-1 news-title" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title}</h5>
-              <span class="badge score-badge">${item.score || 0}分</span>
-            </div>
-            <p class="original-title mt-1">${item.title || ''}</p>
-            <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
-              <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
-              </span>
-              ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
-            </p>
-        </a>`
-    ).join('');
-    document.getElementById('dynamic-news').innerHTML = html;
+function renderNewsWithTranslation(items, insert = false) {
+    Promise.all(items.map(item =>
+        translateTitle(item.title).then(translated => {
+            item.translated_title = translated;
+            return item;
+        })
+    )).then(itemsWithTranslation => {
+        let html = itemsWithTranslation.map(item =>
+            `<a href="${item.url || '#'}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2">
+                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                  <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title || ''}</h5>
+                  <span class="badge score-badge">${item.score || 0}分</span>
+                </div>
+                <p class="original-title mt-1">${item.title || ''}</p>
+                <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+                  <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </span>
+                  ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
+                </p>
+            </a>`
+        ).join('');
+        if (insert) {
+            document.getElementById('dynamic-news').insertAdjacentHTML('afterbegin', html);
+        } else {
+            document.getElementById('dynamic-news').innerHTML = html;
+        }
+    }).catch(() => {
+        document.getElementById('news-error').style.display = 'block';
+    });
 }
 
-// 读取本地缓存
-function getNewsCache(tab) {
-    const cache = localStorage.getItem(getCacheKey(tab));
+// 获取本地缓存
+function getCachedNews() {
+    const cache = localStorage.getItem(NEWS_CACHE_KEY);
     return cache ? JSON.parse(cache) : [];
 }
 
-// 保存本地缓存
-function setNewsCache(tab, news) {
-    localStorage.setItem(getCacheKey(tab), JSON.stringify(news));
+// 保存到本地缓存
+function setCachedNews(news) {
+    localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify(news));
 }
 
-function renderNewsListByIds(ids, translatedList, allItems) {
-    // 用id做映射
-    const translatedMap = {};
-    translatedList.forEach(n => { translatedMap[n.id] = n; });
-    const allMap = {};
-    allItems.forEach(n => { allMap[n.id] = n; });
-    // 按ids顺序渲染
-    const merged = ids.map(id => {
-        if (translatedMap[id]) {
-            return Object.assign({}, allMap[id], { translated_title: translatedMap[id].translated_title });
-        } else if (allMap[id]) {
-            return Object.assign({}, allMap[id], { translated_title: '暂无翻译' });
-        } else {
-            return { id, translated_title: '暂无翻译', title: '', url: '', score: 0, time: 0 };
-        }
-    });
-    renderNewsList(merged);
-}
-
-// 只在非精选页面注入 customNewsIds
-var customNewsIds = {{ custom_news_ids|tojson|safe }};
-
-function renderNewsSkeleton(ids, allItems) {
-    const allMap = {};
-    allItems.forEach(n => { allMap[n.id] = n; });
-    const merged = ids.map(id => {
-        if (allMap[id]) {
-            return Object.assign({}, allMap[id], { translated_title: '暂无翻译' });
-        } else {
-            return { id, translated_title: '暂无翻译', title: '', url: '', score: 0, time: 0 };
-        }
-    });
-    // 渲染时加data-news-id和news-title类
-    let html = merged.map(item =>
-        `<a href="${item.url || '#'}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2" data-news-id="${item.id}">
-            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-              <h5 class="mb-1 news-title" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title || '暂无翻译'}</h5>
-              <span class="badge score-badge">${item.score || 0}分</span>
-            </div>
-            <p class="original-title mt-1">${item.title || ''}</p>
-            <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
-              <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
-              </span>
-              ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
-            </p>
-        </a>`
-    ).join('');
-    document.getElementById('dynamic-news').innerHTML = html;
-}
-
-function updateTranslatedTitles(ids, translatedList) {
-    const translatedMap = {};
-    translatedList.forEach(n => { translatedMap[n.id] = n.translated_title; });
-    ids.forEach(id => {
-        if (translatedMap[id]) {
-            const el = document.querySelector(`[data-news-id='${id}'] .news-title`);
-            if (el) el.textContent = translatedMap[id];
-        }
+function reportNewsToServer(items) {
+    fetch('/api/report_news', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(items)
     });
 }
 
-function fetchServerNews(tab, ids, sort, allItems) {
-    if (!ids.length) return;
-    fetch(`/api/news?ids=${ids.join(',')}`)
+// 获取已翻译新闻，热门按分数排序
+function fetchTranslatedNews(type) {
+    let sort = type === 'score' ? 'score' : 'time';
+    fetch(`/api/news?sort=${sort}&limit=20`)
       .then(res => res.json())
-      .then(news => {
-          updateTranslatedTitles(ids, news);
-          setNewsCache(tab, news);
+      .then(items => {
+          // 渲染已翻译新闻
+          renderNewsWithTranslation(items);
       })
       .catch(() => {
-          // 静默失败
+          document.getElementById('news-error').style.display = 'block';
       });
 }
 
-function switchTab(tab, ids, sort) {
-    // 排除custom_news_ids
-    const filteredIds = ids.filter(id => !customNewsIds.includes(id));
-    Promise.all(filteredIds.map(id =>
-        fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
-    )).then(allItems => {
-        renderNewsSkeleton(filteredIds, allItems);
-        fetchServerNews(tab, filteredIds, sort, allItems);
-    });
-}
-
-let currentTab = 'time';
-let currentSort = 'time';
-let currentIds = [];
-
-function refreshCurrentTab() {
-    if (currentIds.length) {
-        fetchServerNews(currentTab, currentIds, currentSort);
-    }
-}
-
-// 监听标签切换
-// 最新/热门用JS切换，精选跳转后端
-// 按钮HTML需如下：
-// <a href="#" class="btn ... sort-btn ..." data-tab="time">最新</a>
-// <a href="#" class="btn ... sort-btn ..." data-tab="score">热门</a>
-// <a href="?sort=featured" class="btn ... sort-btn ..." data-tab="featured">精选</a>
-document.querySelectorAll('.sort-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        const tab = this.getAttribute('data-tab');
-        if (tab === 'featured') {
-            // 精选直接跳转后端页面
-            return;
-        }
-        // 最新/热门阻止跳转
-        e.preventDefault();
-        // 切换按钮active状态
-        document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        // 获取榜单ID并切换内容
-        const sort = tab === 'score' ? 'score' : 'time';
-        let url = tab === 'score'
-            ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
-            : 'https://hacker-news.firebaseio.com/v0/newstories.json';
-        fetch(url)
-          .then(res => res.json())
-          .then(ids => {
-              currentTab = tab;
-              currentSort = sort;
-              currentIds = ids.slice(0, 20);
-              switchTab(tab, currentIds, sort);
-          });
-    });
-});
-
-// 页面首次加载
-window.addEventListener('DOMContentLoaded', function() {
-    // 判断当前是否精选
-    const urlParams = new URLSearchParams(window.location.search);
-    const sort = urlParams.get('sort');
-    if (sort === 'featured') {
-        // 精选由后端渲染，无需JS处理
-        return;
-    }
-    // 默认tab
-    let tab = 'time';
-    let url = 'https://hacker-news.firebaseio.com/v0/newstories.json';
+// 修改 loadNews，避免重复上报
+function loadNews(type, isInsert = false) {
+    let url = type === 'score'
+        ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
+        : 'https://hacker-news.firebaseio.com/v0/newstories.json';
     fetch(url)
       .then(res => res.json())
       .then(ids => {
-          currentTab = tab;
-          currentSort = 'time';
-          currentIds = ids.slice(0, 20);
-          switchTab(tab, currentIds, 'time');
+          // 取前20条
+          return Promise.all(ids.slice(0, 20).map(id =>
+              fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
+          ));
+      })
+      .then(items => {
+          let cached = getCachedNews();
+          // 只保留未出现过的新新闻
+          let cachedIds = new Set(cached.map(item => item.id));
+          let newItems = items.filter(item => !cachedIds.has(item.id));
+          if (newItems.length > 0) {
+              // 新新闻插入到缓存前面
+              let updated = [...newItems, ...cached];
+              // 最多缓存100条
+              setCachedNews(updated.slice(0, 100));
+              renderNewsWithTranslation(newItems, true); // 插入式渲染
+          }
+          if (!isInsert) {
+              // 首次加载时渲染全部缓存
+              renderNewsWithTranslation(cached.length ? cached : items);
+          }
+          // 只上报未出现过的新新闻到服务器
+          if (newItems.length > 0) {
+              reportNewsToServer(newItems);
+          }
+      })
+      .catch(err => {
+          document.getElementById('news-error').style.display = 'block';
       });
-    setInterval(refreshCurrentTab, 300000); // 5分钟自动刷新
-});
+}
+
+// 页面加载时，优先获取已翻译新闻
+const urlParams = new URLSearchParams(window.location.search);
+const sort = urlParams.get('sort');
+if (sort !== 'featured' && sort !== null) {
+    fetchTranslatedNews(sort);
+    // 拉取新新闻并插入
+    loadNews(sort, true);
+    setInterval(() => loadNews(sort, true), 300000);
+}
 </script>
-{% endif %}
 </body>
 </html>
