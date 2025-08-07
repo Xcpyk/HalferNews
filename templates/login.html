@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 半闻驿</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+    <style>
+        @font-face {
+            font-family: 'AlibabaPuHuiTi-Regular';
+            src: url('/static/AlibabaPuHuiTi-2-55-Regular.ttf') format('truetype');
+            font-style: normal;
+            unicode-range: U+0000-FFFF;
+        }
+        @font-face {
+            font-family: 'AlibabaPuHuiTi-Bold';
+            src: url('/static/AlibabaPuHuiTi-2-85-Bold.ttf') format('truetype');
+            font-style: normal;
+            unicode-range: U+0000-FFFF;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'AlibabaPuHuiTi-Regular', sans-serif;
+            color: #222;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 40px 0 rgba(60,72,88,0.12);
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .logo-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 16px rgba(13,110,253,0.25);
+        }
+        .logo-container img {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            object-fit: cover;
+        }
+        .login-title {
+            font-family: 'AlibabaPuHuiTi-Bold', sans-serif;
+            font-size: 1.8rem;
+            color: #0d6efd;
+            margin-bottom: 0.5rem;
+        }
+        .login-subtitle {
+            font-size: 0.95rem;
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .form-control {
+            border-radius: 0.8rem;
+            border: 2px solid #e9ecef;
+            padding: 0.875rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.8);
+        }
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.15);
+            background: #fff;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            border: none;
+            border-radius: 0.8rem;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(13,110,253,0.3);
+            background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef;
+        }
+        .register-link a {
+            color: #0d6efd;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .register-link a:hover {
+            color: #0a58ca;
+            text-decoration: underline;
+        }
+        .alert {
+            border-radius: 0.8rem;
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .back-link a {
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+        .back-link a:hover {
+            color: #495057;
+        }
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+                margin: 0.5rem;
+            }
+            .login-title {
+                font-size: 1.5rem;
+            }
+            .logo-container {
+                width: 3.5rem;
+                height: 3.5rem;
+            }
+            .logo-container img {
+                width: 2rem;
+                height: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo-container">
+                <img src="/static/logo.jpg" alt="logo">
+            </div>
+            <h1 class="login-title">欢迎回来</h1>
+            <p class="login-subtitle">登录您的半闻驿账号</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <div class="form-group">
+                <label for="username" class="form-label">用户名</label>
+                <input type="text" class="form-control" id="username" name="username" required placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">密码</label>
+                <input type="password" class="form-control" id="password" name="password" required placeholder="请输入密码">
+            </div>
+            <button type="submit" class="btn btn-primary btn-login">立即登录</button>
+        </form>
+        
+        <div class="register-link">
+            <p class="mb-0">还没有账号？ <a href="{{ url_for('register') }}">立即注册</a></p>
+        </div>
+        
+        <div class="back-link">
+            <a href="{{ url_for('index') }}">
+                ← 返回首页
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

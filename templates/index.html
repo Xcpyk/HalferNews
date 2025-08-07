@@ -49,7 +49,7 @@
             padding: 0.7rem 1rem 0.5rem 1rem;
             margin-bottom: 0.6rem;
             background: #fff;
-            border-radius: 0.7rem;
+            border-radius: 0.7rem !important;
             box-shadow: 0 2px 8px rgba(60,72,88,0.07);
             border: 1px solid #e3e8f0;
         }
@@ -157,6 +157,13 @@
                 text-align: center;
                 margin: 0 0.1em;
             }
+            .user-account-section {
+                margin-left: 0.5rem !important;
+            }
+            .favorite-btn {
+                width: 1.8rem !important;
+                height: 1.8rem !important;
+            }
         }
         .sort-btn {
             position: relative;
@@ -170,6 +177,7 @@
             -webkit-backdrop-filter: blur(10px) saturate(1.2);
             transition: background 0.18s, color 0.18s, box-shadow 0.18s, border 0.18s;
             overflow: hidden;
+            margin: 0 0.3rem;
         }
         .sort-btn.active, .sort-btn:active {
             background: linear-gradient(120deg, rgba(220,235,255,0.75) 60%, rgba(255,255,255,0.55) 100%);
@@ -195,6 +203,83 @@
             opacity: 0.7;
             border-radius: 1.3rem;
             filter: blur(2.5px);
+        }
+        
+        /* 白底收藏按钮 */
+        .favorite-btn {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(0,0,0,0.1) !important;
+            border-radius: 50% !important;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .favorite-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .favorite-btn.btn-outline-danger {
+            background: rgba(255,255,255,0.95);
+            color: #dc3545;
+            border-color: rgba(220,53,69,0.3) !important;
+        }
+        .favorite-btn.btn-outline-primary {
+            background: rgba(255,255,255,0.95);
+            color: #e9ecef;
+            border-color: rgba(0,0,0,0.1) !important;
+        }
+        
+        /* 账号入口设计感 */
+        .user-account-section {
+            margin-left: 1.5rem;
+            position: relative;
+        }
+        .user-account-section .dropdown-toggle {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,248,255,0.8) 100%);
+            border: 2px solid rgba(13,110,253,0.15);
+            border-radius: 1.2rem;
+            padding: 0.375rem 1rem;
+            font-weight: 500;
+            color: #0d6efd;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(13,110,253,0.1);
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            line-height: 1.2;
+        }
+        .user-account-section .dropdown-toggle:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(240,248,255,0.9) 100%);
+            border-color: rgba(13,110,253,0.25);
+            box-shadow: 0 6px 20px rgba(13,110,253,0.15);
+            transform: translateY(-1px);
+        }
+        .user-account-section .btn-outline-primary {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,248,255,0.8) 100%);
+            border: 2px solid rgba(13,110,253,0.15);
+            border-radius: 1.2rem;
+            padding: 0.375rem 1rem;
+            font-weight: 500;
+            color: #0d6efd;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(13,110,253,0.1);
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            line-height: 1.2;
+        }
+        .user-account-section .btn-outline-primary:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(240,248,255,0.9) 100%);
+            border-color: rgba(13,110,253,0.25);
+            box-shadow: 0 6px 20px rgba(13,110,253,0.15);
+            transform: translateY(-1px);
         }
         .elegant-header {
             min-height: 4.5rem;
@@ -306,39 +391,101 @@
                     <img src="/static/logo.jpg" alt="logo" style="width:1.25em;height:1.25em;object-fit:contain;vertical-align:middle;margin-right:0.1em;border-radius:0.22em;box-shadow:0 2px 8px rgba(13,110,253,0.10);background:#8a99b3;">
                     <span><span style="font-family:'AlibabaPuHuiTi-Bold',sans-serif;">半闻驿</span> <span class="title-divider"></span><span style="font-family:'AlibabaPuHuiTi-Light',sans-serif;font-size:1.05rem;color:#8fa0b8;letter-spacing:0.5px;vertical-align:middle;margin-left:0.3em;">HalferNews</span></span>
                 </h1>
-                <div class="d-flex gap-2">
-                    <a href="?sort=time" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='time' %}active{% endif %}">最新</a>
-                    <a href="?sort=score" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='score' %}active{% endif %}">热门</a>
-                    <a href="?sort=featured" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='featured' %}active{% endif %}">精选</a>
+                <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center" style="margin-right: 1rem;">
+                        <a href="?sort=time" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='time' %}active{% endif %}">最新</a>
+                        <a href="?sort=score" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='score' %}active{% endif %}">热门</a>
+                        {% if current_user.is_authenticated %}
+                            <a href="?sort=favorites" class="btn btn-sm px-3 py-1 sort-btn {% if sort=='favorites' %}active{% endif %}">收藏</a>
+                        {% endif %}
+                    </div>
+                    <div class="dropdown user-account-section">
+                        {% if current_user.is_authenticated %}
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                {{ current_user.username }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">退出登录</a></li>
+                            </ul>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-primary">登录</a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </header>
         
-        <!-- 精选新闻由后端渲染 -->
-        <div id="featured-news" style="margin-bottom:1.5em;">
-          {% if sort == 'featured' %}
+        <!-- 收藏新闻由后端渲染 -->
+        <div id="favorites-news" style="margin-bottom:0.5em;margin-top:0.3em;">
+          {% if sort == 'favorites' %}
             <div class="list-group">
               {% for item in news_items %}
-                <a href="{{ item.original_url }}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2">
-                  <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                    <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                <div class="list-group-item news-item py-2 px-2">
+                  <div class="d-flex w-100 justify-content-between align-items-start mb-1">
+                    <a href="{{ item.original_url }}" target="_blank" style="text-decoration: none; color: inherit; flex: 1;">
+                      <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                    </a>
+                    <span class="badge score-badge">分数</span>
                   </div>
-                  {% if item.time is defined and item.time %}
-                  <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
-                    <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
-                      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    </span>
-                    {{ item.time | datetimeformat }}
-                  </p>
-                  {% endif %}
-                </a>
+                  <div class="d-flex justify-content-between align-items-start mt-1">
+                    <div class="flex-grow-1">
+                      <p class="original-title mb-0">原始标题</p>
+                      {% if item.time is defined and item.time %}
+                      <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+                        <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        </span>
+                        {{ item.time | datetimeformat }}
+                      </p>
+                      {% endif %}
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger favorite-btn" data-news-id="{{ item.id }}" style="margin-left: 1rem;">
+                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               {% endfor %}
             </div>
           {% endif %}
         </div>
 
-        <!-- 最新/热门新闻由前端JS加载 -->
-        <div id="dynamic-news"></div>
+        <!-- 最新/热门新闻由后端渲染 -->
+        <div id="dynamic-news" style="margin-top:0.3em;">
+          {% if sort != 'favorites' %}
+            <div class="list-group">
+              {% for item in news_items %}
+                <div class="list-group-item news-item py-2 px-2">
+                  <div class="d-flex w-100 justify-content-between align-items-start mb-1">
+                    <a href="{{ item.original_url }}" target="_blank" style="text-decoration: none; color: inherit; flex: 1;">
+                      <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                    </a>
+                    <span class="badge score-badge">{{ item.score }}分</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-start mt-1">
+                    <div class="flex-grow-1">
+                      <p class="original-title mb-0">{{ item.original_title }}</p>
+                      <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+                        <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        </span>
+                        {{ item.time | datetimeformat }}
+                      </p>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                    <button class="btn btn-sm btn-outline-primary favorite-btn" data-news-id="{{ item.id }}" style="margin-left: 1rem;">
+                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                      </svg>
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
         <div id="news-error" style="display:none;color:red;text-align:center;margin-top:1em;">外网接口无响应，无法加载新闻</div>
         
         <div style="flex:0 0 auto;">
@@ -365,6 +512,7 @@
         本站引用的 Hacker News 数据及相关内容遵循 MIT License，原始项目版权归 <a href="https://github.com/HackerNews/API" target="_blank" style="color:#8fa0b8;text-decoration:underline dotted;">Hacker News</a> 及其贡献者所有。
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // 自动刷新页面
         function updateLastUpdated() {
@@ -415,21 +563,36 @@ function renderNewsWithTranslation(items, insert = false) {
             return item;
         })
     )).then(itemsWithTranslation => {
-        let html = itemsWithTranslation.map(item =>
-            `<a href="${item.url || '#'}" target="_blank" class="list-group-item list-group-item-action news-item py-2 px-2">
-                <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                  <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title || ''}</h5>
+        let html = itemsWithTranslation.map(item => {
+            const isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+            const favoriteBtn = isAuthenticated ? 
+                `<button class="btn btn-sm btn-outline-primary favorite-btn" data-news-id="${item.id}">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                    </svg>
+                </button>` : '';
+            
+                        return `<div class="list-group-item news-item py-2 px-2">
+                <div class="d-flex w-100 justify-content-between align-items-start mb-1">
+                  <a href="${item.url || '#'}" target="_blank" style="text-decoration: none; color: inherit; flex: 1;">
+                    <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">${item.translated_title || ''}</h5>
+                  </a>
                   <span class="badge score-badge">${item.score || 0}分</span>
                 </div>
-                <p class="original-title mt-1">${item.title || ''}</p>
-                <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
-                  <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
-                  </span>
-                  ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
-                </p>
-            </a>`
-        ).join('');
+                <div class="d-flex justify-content-between align-items-start mt-1">
+                  <div class="flex-grow-1">
+                    <p class="original-title mb-0">${item.title || ''}</p>
+                    <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
+                      <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:2px;"><circle cx="10" cy="10" r="8.2" stroke="#b0b8c9" stroke-width="1.6" fill="none"/><path d="M10 5.5V10l2.7 2.7" stroke="#b0b8c9" stroke-width="1.4" stroke-linecap="round"/></svg>
+                      </span>
+                      ${item.time ? new Date(item.time * 1000).toLocaleString() : ''}
+                    </p>
+                  </div>
+                  ${favoriteBtn ? `<div style="margin-left: 1rem;">${favoriteBtn}</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
         if (insert) {
             document.getElementById('dynamic-news').insertAdjacentHTML('afterbegin', html);
         } else {
@@ -462,7 +625,7 @@ function reportNewsToServer(items) {
 // 获取已翻译新闻，热门按分数排序
 function fetchTranslatedNews(type) {
     let sort = type === 'score' ? 'score' : 'time';
-    fetch(`/api/news?sort=${sort}&limit=20`)
+    fetch(`/api/news?sort=${sort}&limit=30`)
       .then(res => res.json())
       .then(items => {
           // 渲染已翻译新闻
@@ -480,12 +643,12 @@ function loadNews(type, isInsert = false) {
         : 'https://hacker-news.firebaseio.com/v0/newstories.json';
     fetch(url)
       .then(res => res.json())
-      .then(ids => {
-          // 取前20条
-          return Promise.all(ids.slice(0, 20).map(id =>
-              fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
-          ));
-      })
+              .then(ids => {
+            // 取前30条
+            return Promise.all(ids.slice(0, 30).map(id =>
+                fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
+            ));
+        })
       .then(items => {
           let cached = getCachedNews();
           // 只保留未出现过的新新闻
@@ -512,15 +675,89 @@ function loadNews(type, isInsert = false) {
       });
 }
 
-// 页面加载时，优先获取已翻译新闻
-const urlParams = new URLSearchParams(window.location.search);
-const sort = urlParams.get('sort');
-if (sort !== 'featured' && sort !== null) {
-    fetchTranslatedNews(sort);
-    // 拉取新新闻并插入
-    loadNews(sort, true);
-    setInterval(() => loadNews(sort, true), 300000);
+// 收藏功能
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.favorite-btn')) {
+        const btn = e.target.closest('.favorite-btn');
+        const newsId = btn.dataset.newsId;
+        
+        fetch('/api/favorite', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({news_id: newsId})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (data.favorited) {
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-outline-danger');
+                    btn.innerHTML = `<svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                    </svg>`;
+                } else {
+                    btn.classList.remove('btn-outline-danger');
+                    btn.classList.add('btn-outline-primary');
+                    btn.innerHTML = `<svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                    </svg>`;
+                }
+                // 显示提示消息
+                showToast(data.message);
+            } else {
+                showToast('操作失败：' + data.message);
+            }
+        })
+        .catch(err => {
+            showToast('网络错误，请稍后重试');
+        });
+    }
+});
+
+// 显示提示消息
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #0d6efd;
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        z-index: 9999;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 2000);
 }
+
+// 添加动画样式
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+// 页面加载时，不再需要前端加载新闻，因为使用后端渲染
+// 保留收藏功能的事件监听器
 </script>
 </body>
 </html>
