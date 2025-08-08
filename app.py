@@ -15,6 +15,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['SERVER_NAME'] = 'localhost:3000'
 
 db.init_app(app)
 
@@ -118,6 +119,12 @@ def fetch_and_translate_news():
 
 @app.route('/')
 def index():
+    """主入口页面 - 像素风格的产品门户"""
+    return render_template('index.html')
+
+@app.route('/news')
+def news():
+    """新闻页面 - 原来的新闻功能"""
     sort = request.args.get('sort', 'time')
     page = int(request.args.get('page', 1))
     per_page = 30
@@ -168,7 +175,7 @@ def index():
             'next_num': page + 1 if page < total_pages else total_pages
         })()
     
-    return render_template('index.html', news_items=news_items, pagination=pagination, page=page, sort=sort)
+    return render_template('news.html', news_items=news_items, pagination=pagination, page=page, sort=sort)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -382,4 +389,4 @@ if __name__ == '__main__':
     bg_thread.start()
     
     # 启动Flask应用
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)
