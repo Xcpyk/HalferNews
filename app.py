@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SERVER_NAME'] = 'localhost:3000'
+app.config['SERVER_NAME'] = 'localhost:5000'
 
 db.init_app(app)
 
@@ -389,4 +389,4 @@ if __name__ == '__main__':
     bg_thread.start()
     
     # 启动Flask应用
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
