@@ -15,7 +15,8 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SERVER_NAME'] = 'localhost:5000'
+# 移除SERVER_NAME配置，让Flask自动检测
+# app.config['SERVER_NAME'] = 'localhost:5000'
 
 db.init_app(app)
 
