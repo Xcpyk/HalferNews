@@ -423,13 +423,13 @@
                 <div class="list-group-item news-item py-2 px-2">
                   <div class="d-flex w-100 justify-content-between align-items-start mb-1">
                     <a href="{{ item.original_url }}" target="_blank" style="text-decoration: none; color: inherit; flex: 1;">
-                      <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                      <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title or item.original_title }}</h5>
                     </a>
-                    <span class="badge score-badge">分数</span>
+                    <span class="badge score-badge">{{ item.score }}分</span>
                   </div>
                   <div class="d-flex justify-content-between align-items-start mt-1">
                     <div class="flex-grow-1">
-                      <p class="original-title mb-0">原始标题</p>
+                      <p class="original-title mb-0">{{ item.original_title }}</p>
                       {% if item.time is defined and item.time %}
                       <p class="mb-0 mt-1 d-flex align-items-center" style="font-size:0.74rem;color:#b0b8c9;gap:0.25em;">
                         <span style="display:inline-flex;align-items:center;vertical-align:-2px;">
@@ -439,7 +439,7 @@
                       </p>
                       {% endif %}
                     </div>
-                    <button class="btn btn-sm btn-outline-danger favorite-btn" data-news-id="{{ item.id }}" style="margin-left: 1rem;">
+                    <button class="btn btn-sm favorite-btn {{ 'btn-outline-danger' if item.id in favorited_ids else 'btn-outline-primary' }}" data-news-id="{{ item.id }}" style="margin-left: 1rem;">
                       <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
                       </svg>
@@ -459,7 +459,7 @@
                 <div class="list-group-item news-item py-2 px-2">
                   <div class="d-flex w-100 justify-content-between align-items-start mb-1">
                     <a href="{{ item.original_url }}" target="_blank" style="text-decoration: none; color: inherit; flex: 1;">
-                      <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title }}</h5>
+                      <h5 class="mb-1" style="font-size:0.99rem;font-family:'AlibabaPuHuiTi-Regular',sans-serif;line-height:1.3;color:#222;">{{ item.translated_title or item.original_title }}</h5>
                     </a>
                     <span class="badge score-badge">{{ item.score }}分</span>
                   </div>
@@ -474,7 +474,7 @@
                       </p>
                     </div>
                     {% if current_user.is_authenticated %}
-                    <button class="btn btn-sm btn-outline-primary favorite-btn" data-news-id="{{ item.id }}" style="margin-left: 1rem;">
+                    <button class="btn btn-sm favorite-btn {{ 'btn-outline-danger' if item.id in favorited_ids else 'btn-outline-primary' }}" data-news-id="{{ item.id }}" style="margin-left: 1rem;">
                       <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
                       </svg>

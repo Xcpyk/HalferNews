@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import requests
 from models import db, NewsItem, User, Favorite
@@ -43,15 +43,33 @@ ITEM_URL = f"{HN_API}/item/"
 # 初始化翻译器
 translator = MoonshotTranslator()
 
-# === 添加 PROXIES 配置 ===
-PROXIES = {
-    "http": "http://183.129.171.18:8080",
-    "https": "http://183.129.171.18:8080"
-}
+"""网络请求与代理设置"""
+# 通过环境变量控制代理；未设置则直连
+PROXY_URL = os.getenv("HTTP_PROXY") or os.getenv("HTTPS_PROXY") or None
 
 # 网络请求配置
 REQUEST_TIMEOUT = 15
-MAX_RETRIES = 3
+
+def _http_get(url: str):
+    """带代理回退的 GET 请求。
+    1) 如果配置了代理，优先尝试代理；失败后回退直连
+    2) 未配置代理则直接直连
+    返回: response 对象；失败返回 None
+    """
+    try:
+        if PROXY_URL:
+            try:
+                resp = requests.get(url, proxies={"http": PROXY_URL, "https": PROXY_URL}, timeout=REQUEST_TIMEOUT)
+                if resp.status_code == 200:
+                    return resp
+            except Exception:
+                pass  # 回退直连
+        resp = requests.get(url, timeout=REQUEST_TIMEOUT)
+        if resp.status_code == 200:
+            return resp
+    except Exception:
+        return None
+    return None
 
 # 简单的内存缓存（进程级，重启失效）
 translate_cache = {}
@@ -62,10 +80,10 @@ def fetch_and_translate_news():
         try:
             # 获取最新和热门故事ID
             # 默认抓取最新和热门各30条，避免数据库缺失
-            top_response = requests.get(TOP_STORIES_URL, proxies=PROXIES, timeout=REQUEST_TIMEOUT)
-            new_response = requests.get(NEW_STORIES_URL, proxies=PROXIES, timeout=REQUEST_TIMEOUT)
-            
-            if top_response.status_code != 200 or new_response.status_code != 200:
+            top_response = _http_get(TOP_STORIES_URL)
+            new_response = _http_get(NEW_STORIES_URL)
+
+            if not top_response or not new_response:
                 print("获取新闻列表失败，跳过本次更新")
                 return
                 
@@ -79,8 +97,8 @@ def fetch_and_translate_news():
                 if not item:
                     try:
                         # 从HN API获取详情
-                        story_response = requests.get(f"{ITEM_URL}{story_id}.json", proxies=PROXIES, timeout=REQUEST_TIMEOUT)
-                        if story_response.status_code == 200:
+                        story_response = _http_get(f"{ITEM_URL}{story_id}.json")
+                        if story_response:
                             story_data = story_response.json()
                             # 创建新记录
                             item = NewsItem(
@@ -156,8 +174,8 @@ def news():
             'next_num': page + 1 if page < total_pages else total_pages
         })()
     else:
-        # 获取已翻译的新闻
-        query = NewsItem.query.filter(NewsItem.translated_title != None, NewsItem.translated_title != '')
+        # 获取新闻（允许未翻译，前端使用原文兜底显示）
+        query = NewsItem.query
         if sort == 'score':
             query = query.order_by(NewsItem.score.desc())
         else:
@@ -167,7 +185,17 @@ def news():
         total_items = query.count()
         total_pages = (total_items + per_page - 1) // per_page
         news_items = query.offset((page - 1) * per_page).limit(per_page).all()
-        
+
+        # 计算当前页已收藏
+        favorited_ids = set()
+        if current_user.is_authenticated and news_items:
+            page_ids = [n.id for n in news_items]
+            fav_rows = Favorite.query.filter(
+                Favorite.user_id == current_user.id,
+                Favorite.news_id.in_(page_ids)
+            ).all()
+            favorited_ids = {f.news_id for f in fav_rows}
+
         pagination = type('obj', (object,), {
             'pages': total_pages,
             'has_prev': page > 1,
@@ -175,8 +203,14 @@ def news():
             'prev_num': page - 1 if page > 1 else 1,
             'next_num': page + 1 if page < total_pages else total_pages
         })()
-    
-    return render_template('news.html', news_items=news_items, pagination=pagination, page=page, sort=sort)
+
+    # 收藏页也提供 favorited_ids，便于模板统一判断
+    if sort == 'favorites':
+        favorited_ids = {n.id for n in news_items}
+    elif not current_user.is_authenticated:
+        favorited_ids = set()
+
+    return render_template('news.html', news_items=news_items, pagination=pagination, page=page, sort=sort, favorited_ids=favorited_ids)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -289,7 +323,7 @@ def report_news():
 def api_news():
     sort = request.args.get('sort', 'time')
     limit = int(request.args.get('limit', 30))
-    query = NewsItem.query.filter(NewsItem.translated_title != None, NewsItem.translated_title != '')
+    query = NewsItem.query
     if sort == 'score':
         query = query.order_by(NewsItem.score.desc())
     else:
@@ -366,6 +400,20 @@ def run_background_task():
         # 每5分钟更新一次
         time.sleep(300)
 
+
+@app.route('/admin/refresh_news', methods=['POST'])
+def admin_refresh_news():
+    """手动触发一次新闻刷新。建议仅在受信环境使用。"""
+    token = request.headers.get('X-Admin-Token') or request.args.get('token')
+    expected = os.getenv('ADMIN_TOKEN')
+    if expected and token != expected:
+        abort(403)
+    try:
+        fetch_and_translate_news()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
 def datetimeformat_filter(ts):
     try:
         now = datetime.now()
@@ -385,9 +433,11 @@ def datetimeformat_filter(ts):
 app.jinja_env.filters['datetimeformat'] = datetimeformat_filter
 
 if __name__ == '__main__':
-    # 启动后台任务线程
-    bg_thread = threading.Thread(target=run_background_task, daemon=True)
-    bg_thread.start()
+    # 本地开发时启动后台线程；在Gunicorn下不启动（避免多进程重复抓取）
+    under_gunicorn = os.environ.get('SERVER_SOFTWARE', '').startswith('gunicorn')
+    if not under_gunicorn:
+        bg_thread = threading.Thread(target=run_background_task, daemon=True)
+        bg_thread.start()
     
     # 启动Flask应用
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)
