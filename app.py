@@ -212,6 +212,11 @@ def news():
 
     return render_template('news.html', news_items=news_items, pagination=pagination, page=page, sort=sort, favorited_ids=favorited_ids)
 
+@app.route('/calculator')
+def calculator():
+    """软件成本计算器页面"""
+    return render_template('calculator.html')
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
