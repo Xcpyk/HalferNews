@@ -120,14 +120,25 @@ def fetch_and_translate_news():
                         # 更新状态为翻译中
                         item.translation_status = 1
                         db.session.commit()
+                        
                         # 调用翻译API
                         translated = translator.translate_title(item.original_title)
-                        if translated:
-                            item.translated_title = translated
-                            item.translation_status = 2  # 标记为已翻译
+                        
+                        if translated and len(translated.strip()) > 0:
+                            # 翻译质量检查：确保翻译结果不是原文
+                            if translated.lower().strip() != item.original_title.lower().strip():
+                                item.translated_title = translated
+                                item.translation_status = 2  # 标记为已翻译
+                                print(f"新闻 {item.id} 翻译成功: {item.original_title} -> {translated}")
+                            else:
+                                print(f"新闻 {item.id} 翻译结果与原文相同，标记为失败")
+                                item.translation_status = 3  # 标记为翻译失败
                         else:
+                            print(f"新闻 {item.id} 翻译失败，未获得有效结果")
                             item.translation_status = 3  # 标记为翻译失败
+                        
                         db.session.commit()
+                        
                     except Exception as e:
                         print(f"翻译新闻 {item.id} 失败: {e}")
                         if item:
@@ -283,16 +294,46 @@ def api_translate():
     data = request.get_json()
     title = data.get('title', '')
     if not title:
-        return jsonify({'translated': ''})
+        return jsonify({'translated': '', 'error': '标题不能为空'})
+    
     # 缓存命中直接返回
     if title in translate_cache:
-        return jsonify({'translated': translate_cache[title]})
+        return jsonify({'translated': translate_cache[title], 'cached': True})
+    
     try:
+        # 调用翻译API
         translated = translator.translate_title(title)
-        translate_cache[title] = translated
-        return jsonify({'translated': translated})
+        
+        if translated and len(translated.strip()) > 0:
+            # 翻译质量检查：确保翻译结果不是原文
+            if translated.lower().strip() != title.lower().strip():
+                # 缓存成功的翻译结果
+                translate_cache[title] = translated
+                return jsonify({
+                    'translated': translated, 
+                    'success': True,
+                    'cached': False
+                })
+            else:
+                return jsonify({
+                    'translated': '', 
+                    'error': '翻译结果与原文相同，可能翻译失败',
+                    'success': False
+                })
+        else:
+            return jsonify({
+                'translated': '', 
+                'error': '翻译失败，未获得有效结果',
+                'success': False
+            })
+            
     except Exception as e:
-        return jsonify({'translated': ''})
+        print(f"翻译API调用失败: {e}")
+        return jsonify({
+            'translated': '', 
+            'error': f'翻译服务异常: {str(e)}',
+            'success': False
+        }), 500
 
 @app.route('/api/report_news', methods=['POST'])
 def report_news():
@@ -445,4 +486,4 @@ if __name__ == '__main__':
         bg_thread.start()
     
     # 启动Flask应用
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)
